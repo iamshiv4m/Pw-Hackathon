@@ -9,6 +9,7 @@ import {
   responseInterceptor,
   errorInterceptor,
 } from "@/lib/react-query";
+import axios from "axios";
 
 type ApiConfig = {
   baseURL?: string;
@@ -16,11 +17,18 @@ type ApiConfig = {
 };
 
 const defaultConfig: ApiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 };
+
+export const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const useApi = () => {
   const fetchWithInterceptors = async (
