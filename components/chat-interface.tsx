@@ -6,8 +6,8 @@ import { Send, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSearchParams } from "next/navigation";
 import { useChatCompletion } from "@/hooks/useChatCompletion";
+import { useTranscript } from "@/contexts/TranscriptContext";
 import TypingIndicator from "@/components/typing-indicator";
 
 interface Message {
@@ -25,7 +25,6 @@ const generateId = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).substr(2, 9)}`;
 
 export default function ChatInterface() {
-  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome-1",
@@ -39,6 +38,7 @@ export default function ChatInterface() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const { mutate: getChatCompletion, isPending } = useChatCompletion();
+  const { videoId, isPending: isTranscriptPending } = useTranscript();
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -50,11 +50,12 @@ export default function ChatInterface() {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isPending) return;
 
-    const videoId = searchParams.get("video")?.split("v=")[1]?.split("&")[0];
     if (!videoId) {
       const errorMessage: Message = {
         id: generateId("error"),
-        text: "No video ID found. Please make sure you're watching a video.",
+        text: isTranscriptPending
+          ? "Please wait while we generate the video transcript..."
+          : "No video transcript available. Please make sure you're watching a video.",
         isUser: false,
         timestamp: new Date(),
       };
@@ -174,13 +175,17 @@ export default function ChatInterface() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              disabled={isPending}
+              placeholder={
+                isTranscriptPending
+                  ? "Generating transcript..."
+                  : "Type your message..."
+              }
+              disabled={isPending || isTranscriptPending}
               className="flex-1 border-indigo-200 focus:border-indigo-400 focus:ring-indigo-400"
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isPending}
+              disabled={!inputValue.trim() || isPending || isTranscriptPending}
               size="icon"
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 hover:shadow-md"
             >
